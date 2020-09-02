@@ -56,25 +56,27 @@
                 </el-dropdown-menu>
               </el-dropdown> -->
               <el-dropdown trigger="click" style="padding: 0" @command="handleCommand">
-                <el-popover style="width:auto" placement="top-start" trigger="hover" @show="getEmailGroupsAndSkillType">
-                  <el-row class="info-text">
-                    <el-col :span="7">Team:</el-col>
-                    <el-col class="nameInfo" :span="17">{{userInfo.user_team}}</el-col>
-                  </el-row>
-                  <el-row class="info-text">
-                    <el-col :span="7">Skill:</el-col>
-                    <el-col :span="17">
-                      <div v-for="(item,i) in userInfo.user_skill_type" :key="i" :value="item" class="nameInfo" >{{item}}</div>
-                    </el-col>
-                  </el-row>
-                  <el-row class="info-text">
-                    <el-col :span="24">My Email Groups:</el-col>
-                  </el-row>
-                  <el-row class="info-text">
-                    <el-col :span="24">
-                      <div v-for="(item,i) in userInfo.user_email_groups" :key="i" :value="item" class="nameInfo" >{{item}}</div>
-                    </el-col>
-                  </el-row>
+                <el-popover class="info-content" placement="left-start" trigger="hover">
+                  <el-form class="info-form" ref="form" :model="userInfo" label-position="left" label-width="50px" size="mini">
+                    <el-form-item label="Team:">
+                      <span class="highlight-info">{{userInfo.user_team}}</span>
+                    </el-form-item>
+                    <el-form-item label="Skill:">
+                      <el-row class="info-text" v-for="(item,i) in userInfo.user_skill_type" :key="i" :value="item">
+                        <el-col :span="24">
+                          <span class="highlight-info">{{item}}</span>
+                        </el-col>
+                      </el-row>
+                    </el-form-item>
+                  </el-form>
+                  <el-form class="info-form" ref="form" :model="userInfo" label-position="left" label-width="100px" size="mini">
+                    <el-form-item label="Email Groups:"></el-form-item>
+                    <el-row class="info-text" v-for="(item,i) in userInfo.user_email_groups" :key="i" :value="item">
+                      <el-col :span="24">
+                        <span class="highlight-info">{{item}}</span>
+                      </el-col>
+                    </el-row>
+                  </el-form>
                   <el-button slot="reference" :style="{'background-color': btnColor}" size="small" icon="el-icon-user-solid" class="main-user-info-btn" round>{{this.$store.getters.getUserEid}}</el-button>    
                 </el-popover>
                 <el-dropdown-menu slot="dropdown" class="main-user-info-panel">
@@ -121,28 +123,30 @@
             <el-button @click.stop="createNewTaskGroup" type="primary" size="small" style="width: 100%">Add New Group</el-button>
           </el-col>
         </el-row>
-        <el-card :loading="taskGroupLoading" @click.native="editTaskGroup(taskGroup.group_id)" class="box-card tl-task-group-card" shadow="hover" v-for="(taskGroup, index) in taskGroups" :key="index">
-          <div slot="header" class="clearfix">
-            <el-row :gutter="20">
-              <el-col :span="22">
-                <div @click.stop="editTaskGroup(taskGroup.group_id)" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;text-decoration:underline;color:#409EFF;cursor:pointer">{{taskGroup.group_name}}</div>
-              </el-col>
-            </el-row>
-          </div>
-          <span class="card-Test">Range: &nbsp;{{taskGroup.group_start_time}} ~ {{taskGroup.group_end_time}}</span>
-          <div class="card-Count">
-            <div class="card-Test">Level 3 Task Count: </div>
-            <div style="border-bottom:1px solid #CCC"></div>
-            <el-row>
-              <el-col :span="12" class="card-Test" >Drafting : {{taskGroup.draftingC}}</el-col> 
-              <el-col :span="12" class="card-Test" >Planning : {{taskGroup.planningC}}</el-col> 
-            </el-row>
-            <el-row>
-              <el-col :span="12" class="card-Test" >Running : {{taskGroup.runningC}}</el-col>
-              <el-col :span="12" class="card-Test" >Done : {{taskGroup.doneC}}</el-col>             
-            </el-row>
-          </div>
-        </el-card>
+        <el-row v-loading="taskGroupLoading" element-loading-text="Time Group Loading..." class="tl-task-group-content">
+          <el-card @click.native="editTaskGroup(taskGroup.group_id)" class="box-card tl-task-group-card" shadow="hover" v-for="(taskGroup, index) in taskGroups" :key="index">
+            <div slot="header" class="clearfix">
+              <el-row :gutter="20">
+                <el-col :span="22">
+                  <div @click.stop="editTaskGroup(taskGroup.group_id)" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;text-decoration:underline;color:#409EFF;cursor:pointer">{{taskGroup.group_name}}</div>
+                </el-col>
+              </el-row>
+            </div>
+            <span class="card-Test">Range: &nbsp;{{taskGroup.group_start_time}} ~ {{taskGroup.group_end_time}}</span>
+            <div class="card-Count">
+              <div class="card-Test">Level 3 Task Count: </div>
+              <div style="border-bottom:1px solid #CCC"></div>
+              <el-row>
+                <el-col :span="12" class="card-Test" >Drafting : {{taskGroup.draftingC}}</el-col> 
+                <el-col :span="12" class="card-Test" >Planning : {{taskGroup.planningC}}</el-col> 
+              </el-row>
+              <el-row>
+                <el-col :span="12" class="card-Test" >Running : {{taskGroup.runningC}}</el-col>
+                <el-col :span="12" class="card-Test" >Done : {{taskGroup.doneC}}</el-col>             
+              </el-row>
+            </div>
+          </el-card>
+        </el-row>
       </div>
     </el-drawer>
 <!------- 5. End Task Group Drawer -->
@@ -390,6 +394,9 @@ export default {
         }
       }
     },
+  },
+  mounted () {
+    this.getEmailGroupsAndSkillType()
   }
 }
 </script>
@@ -543,10 +550,18 @@ export default {
   justify-content: center;
   align-items: flex-start;
 }
-.info-text {
-  margin: 5px;
+.info-content {
+  height: auto;
+  width: auto;
 }
-.nameInfo {
+.info-content-body {
+  height: auto;
+  width: auto;
+}
+.info-text {
+  width: auto;
+}
+.highlight-info {
   text-decoration: underline ;
 }
 
@@ -557,6 +572,10 @@ export default {
   padding-right: 10px;
   display: flex;
   flex-direction: column;
+}
+.tl-task-group-content {
+  min-height: 150px;
+  width: 100%;
 }
 .tl-task-group-card {
   height: auto;
@@ -570,25 +589,20 @@ export default {
   flex-direction: column;
   font-size: 17px;
 }
-
 .card-Test {
   font-size: 13px;
   color: #909399; 
   margin-top: 5px;
 }
-
 .card-blog {
   margin: 35px;
   text-align: center;
 }
-
 .card-Count {
   border:1px solid #d2d5db;
   width: 100%;
   border-radius: 5px;
 }
-
-
 .el-drawer__header1{
   margin-bottom: 0px !important;
 }
@@ -600,5 +614,19 @@ export default {
 .el-drawer__header {
   margin-bottom: 0px;
   font-size: 23px;
+}
+.tl-task-group .el-loading-spinner {
+  top: 0;
+  margin-top: 20px;
+}
+.el-popover {
+  word-break: normal;
+  min-width: auto;
+}
+ .el-form-item {
+  margin-bottom: 0;
+}
+.info-form .el-form-item--mini {
+  margin-bottom: 0;
 }
 </style>

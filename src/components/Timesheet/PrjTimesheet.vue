@@ -17,25 +17,22 @@
         </el-row>
         <el-row>
           <el-col :span="24" class="content-main-col" style="margin-bottom:0 !important">
-            <el-card class="box-card pt-title" shadow="hover">
-              <el-row :gutter="20">
-                <el-col :span="6" class="pt-title-item">
-                  <el-select v-model="projectSelect" placeholder="Select" @change="changeProject">
-                    <el-option v-for="project in projects" :key="project.project_name" :label="project.project_name" :value="project.project_name"></el-option>
+            <el-card class="box-card" shadow="hover">
+              <el-row :gutter="10">
+                <el-col :offset="8" :span="4" class="pt-title-item">
+                  <el-select v-model="userSelect" placeholder="Select" multiple collapse-tags filterable clearable @clear="clearUserList" style="width: 100%">
+                    <el-option v-for="user in users" :key="user.user_eid" :label="user.user_eid" :value="user.user_id">
+                      <span style="float: left; margin-right:20px">{{ user.user_eid }}</span>
+                      <span style="float: right; color: #8492a6; margin-right:25px; font-size: 12px">Level - {{ user.user_level }}</span>
+                    </el-option>
                   </el-select>
                 </el-col>
-                <el-col :span="8" class="pt-title-item">
-                  <el-select v-model="teamSelect" placeholder="Select">
-                    <el-option label="--" value="0"></el-option>
-                    <el-option v-for="team in teams" :key="team.team_name" :label="team.team_name" :value="team.team_id"></el-option>
-                  </el-select>
-                </el-col>
-                <el-col :span="8" class="pt-title-item">
+                <el-col :span="3" class="pt-title-item">
                   <el-date-picker v-model="monthSelect" type="month" placeholder="Select"
                     @change="changePtMonth"></el-date-picker>
                 </el-col>
                 <el-col :span="2" class="pt-title-item">
-                  <el-button :style="{'background-color': btnColor, 'border': 'none', 'color': 'white'}" icon="el-icon-arrow-right" circle @click="showTeamTimesheet"></el-button>
+                  <el-button :style="{'background-color': btnColor, 'border': 'none', 'color': 'white'}" icon="el-icon-arrow-right" @click="showTeamTimesheet"></el-button>
                 </el-col>
               </el-row>
             </el-card>
@@ -43,7 +40,7 @@
         </el-row>
         <el-row>
           <el-col :span="24" class="content-main-col" v-for="(timesheet, tIndex) in timesheetDatas" :key="tIndex" >
-            <el-table :data="timesheet.timesheetData" fit empty-text="No worklog" class="pt-table" show-summary :summary-method="getSummaries" :header-cell-style="{'background-color': headerColor}"
+            <el-table max-height="408" :data="timesheet.timesheetData" fit empty-text="No worklog" class="pt-table" show-summary :summary-method="getSummaries" :header-cell-style="{'background-color': headerColor}"
               :row-class-name="ptTableRowStyle" :cell-class-name="ptTableCellStyle"
               :header-row-class-name="ptTableHeaderRowStyle" :header-cell-class-name="ptTableHeaderCellStyle" >
               <el-table-column prop="task_id" label="Id" v-if="false"></el-table-column>
@@ -56,7 +53,7 @@
                 </template>
               </el-table-column>
               <el-table-column v-for="(timesheetHeader, index) in timesheetHeaders" :key="index" :prop="timesheetHeader.prop" :label="timesheetHeader.label"
-                align="center" min-width="40" :class-name="changeCol(timesheetHeader.is_weekday)">
+                align="center" min-width="40" :class-name="changeCol(timesheetHeader.is_weekday, timesheetHeader.is_today)">
                 <template slot="header" slot-scope="scope">
                   <span style="font-size:16px; cursor:default;">{{scope.column.label}}</span>
                 </template>
@@ -82,11 +79,8 @@ export default {
       header1: 'My Timesheet',
       header2: 'Project Timesheet',
       isActive: true,
-      teamSelect: '--',
-      projectSelect: '',
-      teams: [],
-      allTeams: [],
-      projects: [],
+      userSelect: [],
+      users: [],
       monthSelect: '',
       timesheetHeaders: [],
       timesheetMonth: '',
@@ -111,6 +105,10 @@ export default {
       if (columnIndex === 0) {
         return 'pt-table-header-cell-weekday'
       } else {
+        var isToday = this.$data.timesheetHeaders[columnIndex - 1].is_today
+        if (isToday) {
+          return 'pt-table-header-cell-today'
+        }
         var isWeekday = this.$data.timesheetHeaders[columnIndex - 1].is_weekday
         if (isWeekday) {
           return 'pt-table-header-cell-weekday'
@@ -122,27 +120,38 @@ export default {
     ptTableHeaderRowStyle ({row, rowIndex}) {
       return 'pt-table-header-row'
     },
-    changeCol (isWeekday) {
-      if (!isWeekday) {
-        return 'pt-table-col-weekday'
+    changeCol (isWeekday, isToday) {
+      if(isToday) {
+        return 'pt-table-col-today'
       } else {
-        return 'pt-table-col-nonweekday'
+        if (!isWeekday) {
+          return 'pt-table-col-weekday'
+        } else {
+          return 'pt-table-col-nonweekday'
+        }
       }
     },
     changePtMonth (iDate) {
       this.$data.monthSelect = iDate
     },
-    async resetTimesheet (iDateVal) {
+    async resetTimesheet (iDateVal, iUserList) {
       console.log('Date: ' + iDateVal)
+      console.log('Selected User: ' + iUserList)
+      if(iUserList.length == 0){
+         this.$message.error('Please select user!')
+         return
+      }
       this.$data.timesheetDatas = []
       var ptYear = iDateVal.getFullYear()
       var ptMonth = iDateVal.getMonth() + 1
+      console.log(ptYear, ptMonth)
       if (ptMonth < 10) {
         ptMonth = '0' + ptMonth
       } else {
         ptMonth = '' + ptMonth
       }
       var ptDay = iDateVal.getDay()
+      console.log(ptDay)
       var resetArray = []
       var days = 31
       if (ptMonth === '04' || ptMonth === '06' || ptMonth === '09' || ptMonth === '11') {
@@ -156,6 +165,11 @@ export default {
           days = 28
         }
       }
+      console.log(days)
+      // Get today
+      var currentDay = new Date().getDate()
+      var currentMonth = new Date().getMonth() + 1
+      // End get today
       for (var i = 1; i <= days; i++) {
         var resetJson = {}
         var val = ''
@@ -171,6 +185,11 @@ export default {
         } else {
           resetJson.is_weekday = true
         }
+        if ((Number(currentMonth) === Number(ptMonth)) && (Number(currentDay) === Number(i))) {
+          resetJson.is_today = true
+        } else {
+          resetJson.is_today = false
+        }
         resetArray.push(resetJson)
         ptDay++
         if (ptDay === 7) {
@@ -181,8 +200,7 @@ export default {
       var reqMonth = ptYear + '-' + ptMonth
       this.$data.monthSelect = reqMonth
       const res = await http.post('/worklogs/getWorklogByTeamAndMonthForWeb', {
-        wTeamId: this.$data.teamSelect,
-        wProject: this.$data.projectSelect,
+        wUserList: iUserList + '',
         wWorklogMonth: reqMonth
       })
       if (res.data.status === 0) {
@@ -190,21 +208,6 @@ export default {
       } else {
         this.$data.timesheetDatas = [{user: 'Empty', timesheetData: []}]
       }
-    },
-    getCurrentMonthFirst () {
-      var date = new Date()
-      date.setDate(1)
-      var month = parseInt(date.getMonth() + 1)
-      console.log('Month: ' + month)
-      var day = date.getDate()
-      if (month < 10) {
-        month = '0' + month
-      }
-      if (day < 10) {
-        day = '0' + day
-      }
-      var firstDate = new Date(date.getFullYear(), month - 1, day)
-      return firstDate
     },
     getSummaries (param) {
       const { columns, data } = param
@@ -234,63 +237,50 @@ export default {
       this.$data.sumHoursArray = sums
       return sums
     },
-    async setTeam () {
-      const res = await http.get('/users/getTeamList')
-      if (res.data.status === 0) {
-        var resResult = []
-        res.data.data.splice(0, 1)
-        var teamArray = res.data.data
-        for (var i = 0; i < teamArray.length; i++) {
-          var resJson = {}
-          var flag = 0
-          for (var a = 0; a < resResult.length; a++) {
-            if (resResult[a].project_name === teamArray[i].team_project) {
-              flag = 1
-              break
-            }
-          }
-          if (flag === 0) {
-            resJson.project_name = teamArray[i].team_project
-            resResult.push(resJson)
-          }
-        }
-        this.$data.projects = resResult
-        this.$data.teams = teamArray
-        this.$data.allTeams = teamArray
-      }
-      const res1 = await http.post('/users/getUserById', {
-        userId: this.$store.getters.getUserId
-      })
-      if (res1.data.status === 0) {
-        this.$data.teamSelect = res1.data.data[0].user_teamid
-        this.$data.projectSelect = res1.data.data[0].user_teamproject
-        this.changeProject()
-        var firstDate = this.getCurrentMonthFirst()
-        this.resetTimesheet(firstDate)
-      }
-    },
-    changeProject () {
-      console.log('Change Project')
-      var teams = []
-      var teamArray = this.$data.allTeams
-      console.log(teamArray)
-      var project = this.$data.projectSelect
-      for (var i = 0; i < teamArray.length; i++) {
-        if (teamArray[i].team_project === project) {
-          teams.push(teamArray[i])
-        }
-      }
-      this.$data.teams = teams
-      this.$data.teamSelect = teams[0].team_id
-    },
     showTeamTimesheet () {
       var date = new Date(this.$data.monthSelect)
-      this.resetTimesheet(date)
+      var userList = this.$data.userSelect
+      this.resetTimesheet(date, userList)
+    },
+    async getActiveUserList () {
+      const res1 = await http.get('/users/getUserListOrderByLevelDesc', {
+        IsActive: 1
+      })
+      if (res1.data.status === 0) {
+        var userList1 = res1.data.data
+        this.$data.users = []
+        for (var f = 0; f < userList1.length; f++) {
+          if (userList1[f].user_level > 0) {
+            if (userList1[f].user_nickname !== null && userList1[f].user_nickname !== '') {
+              userList1[f].user_eid = userList1[f].user_eid + ' (' + userList1[f].user_nickname + ')'
+            }
+            this.$data.users.push(userList1[f])
+          }
+        }
+      }
+    },
+    clearUserList() {
+      this.$data.timesheetDatas = []
+    },
+    getCurrentMonthFirst () {
+      var date = new Date()
+      date.setDate(1)
+      var month = parseInt(date.getMonth() + 1)
+      var day = date.getDate()
+      if (month < 10) {
+        month = '0' + month
+      }
+      if (day < 10) {
+        day = '0' + day
+      }
+      var firstDate = new Date(date.getFullYear(), month - 1, day)
+      return firstDate
     }
   },
   created () {
     console.log('Created Project Timesheet')
-    this.setTeam()
+    this.$data.monthSelect = this.getCurrentMonthFirst()
+    this.getActiveUserList()
   }
 }
 </script>
@@ -337,20 +327,6 @@ export default {
   margin-top: 10px;
   margin-bottom: 30px;
 }
-.pt-title {
-  width: auto;
-  height: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pt-title-item {
-  width: auto;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  font-size: 18px;
-}
 .pt-table-user {
   height:40px;
   padding-left: 5px;
@@ -386,6 +362,12 @@ export default {
   padding: 0 !important;
   color: white;
 }
+.pt-table-header-cell-today {
+  font-size: 13px;
+  border-top: 1px solid #f1f2f6;
+  padding: 0 !important;
+  color: #DCE775;
+}
 .pt-table-header-cell {
   font-size: 13px;
   border-top: 1px solid #f1f2f6;
@@ -402,6 +384,9 @@ export default {
 }
 .pt-table-col-weekday {
   background-color: #ced6e0;
+}
+.pt-table-col-today {
+  background-color: #DCE775;
 }
 .pt-table-col-nonweekday {
   background-color: white;
