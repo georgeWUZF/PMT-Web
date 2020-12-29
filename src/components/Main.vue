@@ -2,7 +2,7 @@
   <div class="main-body">
     <el-container>
       <el-header>
-        <el-row class="main-el-row" :style="{'background': mainColor}">
+        <el-row class="main-el-row" :style="{'background': mainColor}" justify="center" align="middle">
           <el-col :span="1" :class="this.$store.getters.getIsShowMainBar == false?'hide-view':''">
             <div class="main-grid-content">
               <el-dropdown @command="handleMenuCommand">
@@ -17,7 +17,7 @@
             </div>
           </el-col>
           <el-col :span="5" :class="this.$store.getters.getIsShowMainBar == false?'hide-view':''">
-            <div class="main-grid-content" style="justify-content: flex-start;">
+            <div class="main-grid-content" style="justify-content: flex-start; margin-left: 13px">
               <el-tooltip class="item" effect="dark" content="Timesheet" placement="bottom">
                 <el-button icon="el-icon-date" circle @click="handleMenuCommand('timesheet')"></el-button>
               </el-tooltip>
@@ -97,8 +97,7 @@
       </el-main>
     </el-container>
     <el-dialog title="Theme Style" :visible.sync="centerDialogVisible" width="360px" center>
-      <el-table ref="themeTable" :data="themeData" highlight-current-row @current-change="selectTheme"
-      style="width: 100%">
+      <el-table ref="themeTable" :data="themeData" highlight-current-row @current-change="selectTheme" style="width: 100%">
         <el-table-column property="themeValue" width="20" v-if="false"></el-table-column>
         <el-table-column property="themeName" label="Theme Name" align="center"></el-table-column>
         <el-table-column property="mainColor" label="Color" width="120" align="center">
@@ -126,23 +125,30 @@
         <el-row v-loading="taskGroupLoading" element-loading-text="Time Group Loading..." class="tl-task-group-content">
           <el-card @click.native="editTaskGroup(taskGroup.group_id)" class="box-card tl-task-group-card" shadow="hover" v-for="(taskGroup, index) in taskGroups" :key="index">
             <div slot="header" class="clearfix">
-              <el-row :gutter="20">
-                <el-col :span="22">
+              <el-row>
+                <el-col :span="20">
                   <div @click.stop="editTaskGroup(taskGroup.group_id)" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;text-decoration:underline;color:#409EFF;cursor:pointer">{{taskGroup.group_name}}</div>
                 </el-col>
+                <!--<el-col :span="4">
+                  <el-button v-show="taskGroup.showArchiveBtn" style="float: right; padding: 3px 0; font-size: 12px; padding: 2px" size="small" type="info">Archive</el-button>
+                </el-col>-->
               </el-row>
             </div>
             <span class="card-Test">Range: &nbsp;{{taskGroup.group_start_time}} ~ {{taskGroup.group_end_time}}</span>
             <div class="card-Count">
               <div class="card-Test">Level 3 Task Count: </div>
-              <div style="border-bottom:1px solid #CCC"></div>
+              <div style="border-bottom:1px solid #CCC; margin: 4px 0 2px 0"></div>
               <el-row>
-                <el-col :span="12" class="card-Test" >Drafting : {{taskGroup.draftingC}}</el-col> 
-                <el-col :span="12" class="card-Test" >Planning : {{taskGroup.planningC}}</el-col> 
+                <el-col :span="5" class="card-Test" >Drafting</el-col> 
+                <el-col :span="7" class="card-Test" >：{{taskGroup.draftingC}}</el-col> 
+                <el-col :span="5" class="card-Test" >Planning</el-col>
+                <el-col :span="7" class="card-Test" >：{{taskGroup.planningC}}</el-col>  
               </el-row>
               <el-row>
-                <el-col :span="12" class="card-Test" >Running : {{taskGroup.runningC}}</el-col>
-                <el-col :span="12" class="card-Test" >Done : {{taskGroup.doneC}}</el-col>             
+                <el-col :span="5" class="card-Test" >Running</el-col>
+                <el-col :span="7" class="card-Test" >：{{taskGroup.runningC}}</el-col>
+                <el-col :span="5" class="card-Test" >Done</el-col>        
+                <el-col :span="7" class="card-Test" >：{{taskGroup.doneC}}</el-col>      
               </el-row>
             </div>
           </el-card>
@@ -152,14 +158,22 @@
 <!------- 5. End Task Group Drawer -->
 <!------- 6. Task Group Dialog -->
     <el-dialog title="Time Group" :visible.sync="groupDialogVisible" width="35%" :close-on-click-modal="false" top="15%">
-      <el-form :model="taskGroupForm" label-width="100px" class="tl-edit-form">
+      <el-form :model="taskGroupForm" label-width="100px" class="tg-edit-form">
         <el-form-item label="Group Name" >
-          <el-input v-model="taskGroupForm.formGroupName" style="width: 100%"></el-input>
+          <el-input v-model="taskGroupForm.formGroupName" style="width: 100%; text-align: center"></el-input>
         </el-form-item>
-        <el-form-item label="Time Range"><!--@change="dateLimit" :picker-options="pickerOptions"-->
+        <el-form-item label="Time Range">
           <el-date-picker v-model="taskGroupForm.formGroupTimeRange" type="daterange"
             start-placeholder="Start Date" end-placeholder="End Date" format="yyyy-MM-dd" value-format="yyyy-MM-dd" style="width:100%">
           </el-date-picker>
+        </el-form-item>
+        <el-form-item label="Type">
+          <el-select v-model="taskGroupForm.formGroupTimeType" placeholder="Please select..." style="width:100%">
+            <el-option label="Sprintly" value="Sprintly"></el-option>
+            <el-option label="Weekly" value="Weekly"></el-option>
+            <el-option label="Monthly" value="Monthly"></el-option>
+            <el-option label="Others" value="Others"></el-option>
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -212,28 +226,13 @@ export default {
         formGroupId: 0,
         formGroupName: null,
         formGroupTimeRange: null,
-        formGroupRelatedTask: null,
+        formGroupTimeType: 'Sprintly',
         setNowDate : null
       },
       taskGroupLoading: false,
-      /*pickerOptions: {
-				disabledDate(time) {
-          let pre = new Date();
-          let oneMonth = pre.setMonth(pre.getMonth() + 1);
-          let pre1 = new Date();
-          let fiveDays = pre1.setDate(pre1.getDate() -5);
-				  return time.getTime() < fiveDays || time.getTime() > oneMonth;
-		   }
-     }*/
     }
   },
   methods: {
-    /*dateLimit(time){
-      this.startTime = time[0];
-      this.endTime = time[1];
-      console.log("george: " + this.startTime);
-      console.log("george: " + this.endTime);
-    },*/
     setCurrent (row) {
       console.log(this.$refs)
       this.$nextTick(() => {
@@ -309,18 +308,16 @@ export default {
       this.$data.taskGroupForm.formGroupId = 0
       this.$data.taskGroupForm.formGroupName = ''
       this.$data.taskGroupForm.formGroupTimeRange = null
-      this.$data.taskGroupForm.formGroupRelatedTask = null
+      this.$data.taskGroupForm.formGroupTimeType = 'Sprintly'
     },
     async editTaskGroup (iGroupId) {
       console.log(iGroupId)
       this.resetTaskGroupForm()
-      this.$data.taskGroupForm.formGroupRelatedTask = this.$data.selectedLv1TaskName
       await this.getTaskGroup(iGroupId, false)
       this.$data.groupDialogVisible = true
     },
     createNewTaskGroup () {
       this.resetTaskGroupForm()
-      this.$data.taskGroupForm.formGroupRelatedTask = this.$data.selectedLv1TaskName
       this.$data.groupDialogVisible = true
     },
     async getTaskGroup (iGroupId, isShowCurrent) {
@@ -335,19 +332,25 @@ export default {
         if (iGroupId === 0) {
           this.$data.taskGroups = []
           var taskGroupArr = res.data.data 
-          this.$data.taskGroups = taskGroupArr 
-          console.log(this.$data.taskGroups)             
-          var resResult = []
+          console.log(this.$data.taskGroups)
           for (var i = 0; i < taskGroupArr.length; i++) {
-            var resJson = {}
-            resJson.group_long_name = taskGroupArr[i].group_name + ' ' + taskGroupArr[i].group_start_time + ' ~ ' + taskGroupArr[i].group_end_time
-            resJson.group_id = taskGroupArr[i].group_id
-            resResult.push(resJson)
+            var draftingTaskCount = Number(taskGroupArr[i].draftingC)
+            var planningTaskCount = Number(taskGroupArr[i].planningC)
+            var runningTaskCount = Number(taskGroupArr[i].runningC)
+            var doneTaskCount = Number(taskGroupArr[i].doneC)
+            taskGroupArr[i].showArchiveBtn = false
+            if (doneTaskCount > 0) {
+              if ( draftingTaskCount === 0 && planningTaskCount === 0 && doneTaskCount === 0) {
+                taskGroupArr[i].showArchiveBtn = true
+              }
+            }
           }
+          this.$data.taskGroups = taskGroupArr 
         } else {
           this.$data.taskGroupForm.formGroupId = res.data.data[0].group_id
           this.$data.taskGroupForm.formGroupName = res.data.data[0].group_name
           this.$data.taskGroupForm.formGroupTimeRange = [res.data.data[0].group_start_time, res.data.data[0].group_end_time]
+          this.$data.taskGroupForm.formGroupTimeType = res.data.data[0].group_type
         }
       }
       this.$data.taskGroupLoading = false
@@ -356,7 +359,7 @@ export default {
       var tGroupId = this.$data.taskGroupForm.formGroupId
       var tGroupName = this.$data.taskGroupForm.formGroupName
       var tGroupTimeRange = this.$data.taskGroupForm.formGroupTimeRange
-      var tGroupRelatedTask = this.$data.taskGroupForm.formGroupRelatedTask
+      var tGroupTimeType = this.$data.taskGroupForm.formGroupTimeType
       if (tGroupName === '' || tGroupName === null) {
         this.$message.error('Task Group Could not be empty!')
         return
@@ -383,11 +386,11 @@ export default {
           tGroupName: tGroupName,
           tGroupStartTime: tGroupStartTime,
           tGroupEndTime: tGroupEndTime,
-          tGroupRelatedTask: tGroupRelatedTask
+          tGroupTimeType: tGroupTimeType
         })
         if (res.data.status === 0) {
           this.$message({message: 'Task group created/updated successfully!', type: 'success'})
-          this.getTaskGroup(0, tGroupRelatedTask)
+          this.getTaskGroup(0, false)
           this.$data.groupDialogVisible = false
         } else {
           this.$message.error('Task group created/updated fail!')
@@ -423,7 +426,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  width:100%;
+  width: 100%;
   height: 50px;
 }
 .main-menu-btn {
@@ -599,9 +602,8 @@ export default {
   text-align: center;
 }
 .card-Count {
-  border:1px solid #d2d5db;
   width: 100%;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 .el-drawer__header1{
   margin-bottom: 0px !important;
@@ -628,5 +630,8 @@ export default {
 }
 .info-form .el-form-item--mini {
   margin-bottom: 0;
+}
+.tg-edit-form .el-input__inner {
+  text-align: center;
 }
 </style>
